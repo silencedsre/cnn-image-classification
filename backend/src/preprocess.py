@@ -1,27 +1,21 @@
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from PIL import  Image
-import os
 import numpy as np
-import pathlib
+import sys
+import os
+sys.path.append(os.pardir)
+sys.path.append(os.path.join(os.pardir, os.pardir))
 
-from src.config import TRAIN_PATH
+from src.config import (
+                        TRAIN_DIR,
+                        VALIDATION_DIR,
+                        TEST_DIR,
+                        BATCH_SIZE,
+                        IMG_HEIGHT,
+                        IMG_WIDTH,
+                        AUTOTUNE
+)
 
-BATCH_SIZE = 32
-IMG_HEIGHT = 150
-IMG_WIDTH = 150
-
-AUTOTUNE = tf.data.experimental.AUTOTUNE
-
-
-data_dir = pathlib.Path(TRAIN_PATH)
-image_count = len(list(data_dir.glob('*/*.jpg')))
-STEPS_PER_EPOCH = np.ceil(image_count/BATCH_SIZE)
-
-
-CLASS_NAMES = np.array([item.name for item in data_dir.glob('*')])
-
-list_ds = tf.data.Dataset.list_files(str(data_dir/'*/*'))
+CLASS_NAMES = np.array([item.name for item in TRAIN_DIR.glob('*')])
 
 def get_label(file_path):
   # convert the path to a list of path components
@@ -49,16 +43,6 @@ def process_path(file_path):
   return img, label
 
 
-# Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
-labeled_ds = list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
-
-print(labeled_ds)
-
-for image, label in labeled_ds.take(1):
-  print("Image shape: ", image.numpy().shape)
-  print("Label: ", label.numpy())
-
-
 def prepare_for_training(ds, cache=True, shuffle_buffer_size=1000):
   # This is a small dataset, only load it once, and keep it in memory.
   # use `.cache(filename)` to cache preprocessing work for datasets that don't
@@ -82,10 +66,12 @@ def prepare_for_training(ds, cache=True, shuffle_buffer_size=1000):
 
   return ds
 
+def process_single_image(TEST_IMG_PATH):
+    img = tf.io.read_file(TEST_IMG_PATH)
+    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.convert_image_dtype(img, tf.float32)
+    img = tf.image.resize(img, [IMG_WIDTH, IMG_HEIGHT])
+    img = tf.expand_dims(img, axis=0)
+    return img
 
-train_ds = prepare_for_training(labeled_ds)
 
-
-# print(train_ds)
-# image_batch, label_batch = next(iter(train_ds))
-# print(label_batch)

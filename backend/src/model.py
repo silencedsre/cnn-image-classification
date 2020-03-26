@@ -1,34 +1,30 @@
 import tensorflow as tf
-import datetime
+import sys
 import os
-import pathlib
-from src.config import TRAIN_PATH
-from src.preprocess import process_path, prepare_for_training
+import numpy as np
+sys.path.append(os.pardir)
+sys.path.append(os.path.join(os.pardir, os.pardir))
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], True)
+from .preprocess import process_path, prepare_for_training, process_single_image
 
-LEARNING_RATE = 0.001
-EPOCHS = 10
-BATCH_SIZE = 32
+from src.config import (
+    TRAIN_DIR,
+    VALIDATION_DIR,
+    TEST_DIR,
+    LEARNING_RATE,
+    EPOCHS,
+    BATCH_SIZE,
+    AUTOTUNE,
+    TRAIN_LOG_DIR,
+    CHECKPOINT_DIR,
+    WEIGHTS_PATH,
+    OPTIMIZER,
+    CATEGORICAL_LOSS,
+)
 
-AUTOTUNE = tf.data.experimental.AUTOTUNE
-
-train_dir = pathlib.Path(TRAIN_PATH)
-list_ds = tf.data.Dataset.list_files(str(train_dir/'*/*'))
-
-optimizer = tf.optimizers.Adam(learning_rate=LEARNING_RATE)
-ce_loss = tf.losses.CategoricalCrossentropy(from_logits=True)
-losses = tf.keras.metrics.Mean(name='loss')
-val_losses = tf.keras.metrics.Mean(name='val_loss')
-
-# current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = f'./temp/train/{datetime.datetime.now()}/logs'
-file_writer = tf.summary.create_file_writer(train_log_dir)
-checkpoint_dir = f'./temp/train/checkpoints/'
-
-
-model_dir = f'./temp/train/models/'
-weights_path = os.path.join(model_dir, 'weights.h5')
-
-
+LOSSES = tf.keras.metrics.Mean(name='loss')
+VALIDATION_LOSS = tf.keras.metrics.Mean(name='val_loss')
 
 class AlexNet(tf.keras.Model):
     def __init__(self):
@@ -119,20 +115,21 @@ class AlexNet(tf.keras.Model):
 
         return x
 
+
 def train_step(model, inputs, labels, loss_fn, optimzer):
     with tf.GradientTape() as t:
         y_predicted = model(inputs, training=True)
         current_loss = loss_fn(labels, y_predicted)
 
     gradients = t.gradient(current_loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    OPTIMIZER.apply_gradients(zip(gradients, model.trainable_variables))
     return current_loss
+
 
 def validation_step(model, inputs, labels, loss_fn):
     y_predicted = model(inputs, training=False)
     current_loss = loss_fn(labels, y_predicted)
     return current_loss
-
 
 
 def check_for_checkpoint(manager):
@@ -142,56 +139,59 @@ def check_for_checkpoint(manager):
     else:
         print("Initializing from scratch")
 
+
 def predict(inputs):
     predicted = model(inputs)
     return tf.nn.softmax(predicted)
 
-# for sample, label in test_dataset.batch(2).take(1):
-#     predictions = predict(sample)
-#     print(tf.argmax(predictions, axis=1), label)
-
-
 if __name__ == "__main__":
+    train_ds = tf.data.Dataset.list_files(str(TRAIN_DIR / '*/*'))
+    validation_ds = tf.data.Dataset.list_files(str(VALIDATION_DIR / '*/*'))
+    test_ds = tf.data.Dataset.list_files(str(TEST_DIR / '*/'))
 
-    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
-
-    labeled_ds = list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
-    train_dataset = prepare_for_training(labeled_ds)
+    file_writer = tf.summary.create_file_writer(TRAIN_LOG_DIR)
+    labeled_train_ds = train_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+    labeled_validation_ds = validation_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+    train_dataset = prepare_for_training(labeled_train_ds)
+    validation_dataset = prepare_for_training(labeled_validation_ds)
     # print(f"TRAIN DATASET {train_dataset}")
     model = AlexNet()
-    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
-    manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=3)
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=OPTIMIZER, net=model)
+    manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_DIR, max_to_keep=3)
     check_for_checkpoint(manager)
     for epoch in range(EPOCHS):
         ckpt.step.assign_add(1)
 
         print(f'epoch: {epoch}')
-        losses.reset_states()
-        val_losses.reset_states()
+        LOSSES.reset_states()
+        VALIDATION_LOSS.reset_states()
         for x_batch, y_batch in train_dataset:
-            loss = train_step(model, x_batch, y_batch, ce_loss, optimizer)
+            loss = train_step(model, x_batch, y_batch, CATEGORICAL_LOSS, OPTIMIZER)
             # print(loss)
-            losses(loss)
+            LOSSES(loss)
         #         step += 1
 
         save_path = manager.save()
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
 
         with file_writer.as_default():
-            tf.summary.scalar('loss', losses.result(), step=epoch)
-            tf.summary.image('Input images', x_batch, step=epoch)
+            tf.summary.scalar('loss', LOSSES.result(), step=epoch)
 
-        print(losses.result())
+        print(LOSSES.result())
 
-        # for x_batch, y_batch in validation_dataset:
-        #     val_loss = validation_step(model, x_batch, y_batch, ce_loss)
-        #     val_losses(val_loss)
+        for x_batch, y_batch in validation_dataset:
+            val_loss = validation_step(model, x_batch, y_batch, CATEGORICAL_LOSS)
+            VALIDATION_LOSS(val_loss)
 
         with file_writer.as_default():
-            tf.summary.scalar('val_loss', val_losses.result(), step=epoch)
+            tf.summary.scalar('val_loss', VALIDATION_LOSS.result(), step=epoch)
 
-        model.save_weights(weights_path)
+        model.save_weights(WEIGHTS_PATH)
 
-
+    # CLASS_NAMES = np.array([item.name for item in TRAIN_DIR.glob('*')])
+    # print(CLASS_NAMES)
+    # for img_path in test_ds.take(1):
+    #     print(img_path)
+    #     image = process_single_image(img_path)
+    #     prediction = predict(image)
+    #     print(prediction)
