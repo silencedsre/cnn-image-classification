@@ -6,11 +6,10 @@ import tensorflow as tf
 import json
 from src.config import WEIGHTS_PATH
 from src.preprocess import process_single_image
-from src.model import AlexNet, predict
+from src.model import AlexNet
 
 # physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
 
 app = Flask(__name__)
 
@@ -34,11 +33,9 @@ def load_model():
 def hello():
     return "Hello World!"
 
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -59,10 +56,11 @@ def upload_file():
         model = load_model()
         test_ds = tf.data.Dataset.list_files(str(UPLOAD_FOLDER / '*/'))
         for image_path in test_ds:
-            predicted_image_class = model(image_path)
+            img = process_single_image(image_path)
+            predicted = model(img)
+            predicted_image_class = tf.argmax(tf.nn.softmax(predicted))
             print("predicted_image_class", predicted_image_class)
-
-    return json.dumps({"class": "12"})
+            return json.dumps({"class": predicted_image_class})
 
 if __name__ == "__main__":
     app.run(debug=True)
