@@ -6,7 +6,7 @@ sys.path.append(os.pardir)
 sys.path.append(os.path.join(os.pardir, os.pardir))
 # physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
-from .preprocess import process_path, prepare_for_training, process_single_image
+from src.preprocess import process_path, prepare_for_training, process_single_image
 
 from src.config import (
     TRAIN_DIR,
