@@ -18,14 +18,6 @@ app = Flask(__name__)
 # Allow
 CORS(app)
 
-# Path for uploaded images
-UPLOAD_FOLDER = 'data/uploads/'
-
-# Allowed file extransions
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
 def load_model():
     model = AlexNet()
     model.load_weights(WEIGHTS_PATH)
@@ -49,8 +41,8 @@ def convert_image(file):
 def hello():
     return "Hello World!"
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_file():
+@app.route('/predict', methods=['GET', 'POST'])
+def predict():
     if request.method == 'POST':
         print("request files", request.files)
         file = request.files['file']

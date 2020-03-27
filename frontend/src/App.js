@@ -50,7 +50,7 @@ class App extends Component {
     formData.append('file', this.state.imageFile, 'img.png')
 
     var t0 = performance.now();
-    axios.post('http://127.0.0.1:5000/upload', formData)
+    axios.post('http://127.0.0.1:5000/predict', formData)
     .then(function(response, data) {
             data = response.data;
             console.log(data["class"])
