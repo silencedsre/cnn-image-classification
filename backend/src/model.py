@@ -159,9 +159,7 @@ if __name__ == "__main__":
         VALIDATION_LOSS.reset_states()
         for x_batch, y_batch in train_dataset:
             loss = train_step(model, x_batch, y_batch, CATEGORICAL_LOSS, OPTIMIZER)
-            # print(loss)
             LOSSES(loss)
-        #         step += 1
 
         save_path = manager.save()
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
