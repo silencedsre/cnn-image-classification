@@ -37,3 +37,24 @@ For serving with environment with GPU set environment variable
 ## Frontend
 `cd frontend` <br>
 `npm i && npm start`
+
+
+## Model Architecture
+#### Convolutional Layers
+|   	Input| Input Size 	|Kernel   	|Stride   	| Num Kernels  	| Output Size  	|
+|---	|---	|---	|---	|---	|---	|
+|   Image	|   	150* 150 *3|  9 * 9 * 3 	|3   	| 64  	| 48 *48 *64  	|
+|  Max Pool  	| 48* 48 *64  	|   2 * 2	| 2  	| 64  	| 24 * 24 * 64  	|
+| Conv 1  	| 24 * 24 *64  	| 5 * 5  	| 1  	| 32  	| 20 * 20 *32  	|
+|  Max Pool 1|20* 20* 32   	|2 * 2   	| 1  	| 32  	| 18 * 18 * 32  	|
+|  Conv 2 	| 18 * 18 * 32  	| 3 * 3  	| 1  	| 16  	| 16 * 16 * 16  	|
+|   Max Pool 2| 16 * 16 *16  	| 3 * 3  	| 1  	|  16 	| 14 * 14 * 16  	|
+
+#### Dense layers
+|   Input Layer	| Input Shape  	|   Output Shape	|   Output Layer 	|
+|---	|---	|---	|---	|
+|   Max Pool 2	|   14 * 14 * 16	|  3136  	|   Flatten	|
+|  Flatten 	|  3136 	|   512	|   Dense 1	| 
+|   Dense 1	|  512 	| 256  	| Dense 2  	|
+|   Dense 2	| 256  	| 64  	| Dense 3  	|
+|  Dense 4 	| 64  	| 6  	|   Final Output	|
