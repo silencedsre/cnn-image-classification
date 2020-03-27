@@ -27,11 +27,9 @@ def check_class(pos):
 if __name__ == "__main__":
     model = load_model()
     test_ds = tf.data.Dataset.list_files(str(TEST_DIR / '*/'))
-    CLASS_NAMES = np.array([item.name for item in TRAIN_DIR.glob('*')])
-    print(CLASS_NAMES)
     for img_path in test_ds.take(1):
         print(img_path)
         image = process_single_image(img_path)
         prediction = model(image)
-        class_prediction = tf.nn.softmax(prediction)
+        class_prediction = make_predictions(prediction)
         print(class_prediction)

@@ -2,10 +2,7 @@ from flask import Flask, request
 from flask_cors import CORS
 import json
 from src.preprocess import convert_image
-from src.predict import load_model, make_predictions, check_class
-
-# physical_devices = tf.config.experimental.list_physical_devices('GPU')
-# tf.config.experimental.set_memory_growth(physical_devices[0], True)
+from src.predict import load_model, make_predictions
 
 app = Flask(__name__)
 
