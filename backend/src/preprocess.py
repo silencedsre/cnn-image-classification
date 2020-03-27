@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import sys
 import os
+from PIL import Image
 sys.path.append(os.pardir)
 sys.path.append(os.path.join(os.pardir, os.pardir))
 
@@ -16,6 +17,7 @@ from src.config import (
 )
 
 CLASS_NAMES = np.array([item.name for item in TRAIN_DIR.glob('*')])
+print(CLASS_NAMES)
 
 def get_label(file_path):
   # convert the path to a list of path components
@@ -74,4 +76,14 @@ def process_single_image(TEST_IMG_PATH):
     img = tf.expand_dims(img, axis=0)
     return img
 
+def convert_image(file):
+    img = Image.open(file)
+    img = np.array(img)
+    img = tf.convert_to_tensor(
+        img, dtype=None, dtype_hint=None, name=None
+    )
+    img = tf.image.convert_image_dtype(img, tf.float32)
+    img = tf.image.resize(img, [IMG_WIDTH, IMG_HEIGHT])
+    img = tf.expand_dims(img, axis=0)
+    return img
 
