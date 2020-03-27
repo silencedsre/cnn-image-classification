@@ -11,7 +11,7 @@
 `pip install kaggle==1.5.6`
 
 #### Note
-For serving with environment with GPU set environment variable
+For serving with GPU set environment variable
 > `$ export TF_FORCE_GPU_ALLOW_GROWTH=true`
 
 
