@@ -1,20 +1,14 @@
 import tensorflow as tf
 import sys
 import os
-import numpy as np
 sys.path.append(os.pardir)
 sys.path.append(os.path.join(os.pardir, os.pardir))
-# physical_devices = tf.config.experimental.list_physical_devices('GPU')
-# tf.config.experimental.set_memory_growth(physical_devices[0], True)
-from src.preprocess import process_path, prepare_for_training, process_single_image
+from src.preprocess import process_path, prepare_for_training
 
 from src.config import (
     TRAIN_DIR,
     VALIDATION_DIR,
-    TEST_DIR,
-    LEARNING_RATE,
     EPOCHS,
-    BATCH_SIZE,
     AUTOTUNE,
     TRAIN_LOG_DIR,
     CHECKPOINT_DIR,
@@ -45,16 +39,18 @@ class AlexNet(tf.keras.Model):
 
         # Flatten
 
-        # Dense
+        # Dense Layers
         self.wd1 = tf.Variable(initializer([3136, 512]), trainable=True, name='dense1')
         self.wd2 = tf.Variable(initializer([512, 256]), trainable=True, name='dense2')
         self.wd3 = tf.Variable(initializer([256, 64]), trainable=True, name='dense3')
         self.wd4 = tf.Variable(initializer([64, 6]), trainable=True, name='dense4')
-        #
+
+        #Conv biases
         self.bc1 = tf.Variable(tf.zeros([64]), dtype=tf.float32, trainable=True, name='conv1_bias')
         self.bc2 = tf.Variable(tf.zeros([32]), dtype=tf.float32, trainable=True, name='conv2_bias')
         self.bc3 = tf.Variable(tf.zeros([16]), dtype=tf.float32, trainable=True, name='conv3_bias')
-        #
+
+        #Dense biases
         self.bd1 = tf.Variable(tf.zeros([512]), dtype=tf.float32, trainable=True, name='dense1_bias')
         self.bd2 = tf.Variable(tf.zeros([256]), dtype=tf.float32, trainable=True, name='dense2_bias')
         self.bd3 = tf.Variable(tf.zeros([64]), dtype=tf.float32, trainable=True, name='dense3_bias')
@@ -140,22 +136,18 @@ def check_for_checkpoint(manager):
         print("Initializing from scratch")
 
 
-def predict(inputs):
-    predicted = model(inputs)
-    return tf.nn.softmax(predicted)
-
 if __name__ == "__main__":
     train_ds = tf.data.Dataset.list_files(str(TRAIN_DIR / '*/*'))
     validation_ds = tf.data.Dataset.list_files(str(VALIDATION_DIR / '*/*'))
-    test_ds = tf.data.Dataset.list_files(str(TEST_DIR / '*/'))
 
-    file_writer = tf.summary.create_file_writer(TRAIN_LOG_DIR)
     labeled_train_ds = train_ds.map(process_path, num_parallel_calls=AUTOTUNE)
     labeled_validation_ds = validation_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+
     train_dataset = prepare_for_training(labeled_train_ds)
     validation_dataset = prepare_for_training(labeled_validation_ds)
-    # print(f"TRAIN DATASET {train_dataset}")
+
     model = AlexNet()
+    file_writer = tf.summary.create_file_writer(TRAIN_LOG_DIR)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=OPTIMIZER, net=model)
     manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_DIR, max_to_keep=3)
     check_for_checkpoint(manager)
@@ -187,11 +179,3 @@ if __name__ == "__main__":
             tf.summary.scalar('val_loss', VALIDATION_LOSS.result(), step=epoch)
 
         model.save_weights(WEIGHTS_PATH)
-
-    # CLASS_NAMES = np.array([item.name for item in TRAIN_DIR.glob('*')])
-    # print(CLASS_NAMES)
-    # for img_path in test_ds.take(1):
-    #     print(img_path)
-    #     image = process_single_image(img_path)
-    #     prediction = predict(image)
-    #     print(prediction)
