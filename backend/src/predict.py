@@ -4,6 +4,10 @@ from src.config import TEST_DIR, TRAIN_DIR, WEIGHTS_PATH
 from src.preprocess import process_single_image
 from src.model import AlexNet
 
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+
 def load_model():
     model = AlexNet()
     model.load_weights(WEIGHTS_PATH)

@@ -25,7 +25,7 @@ BATCH_SIZE = 32
 TRAIN_LOG_DIR = f'./temp/train/{datetime.datetime.now()}/logs'
 CHECKPOINT_DIR = f'./temp/train/checkpoints/'
 pathlib.Path(CURRENT_DIR.parent/"temp/models").mkdir(parents=True, exist_ok=True)
-MODEL_DIR = f'./temp/models'
+MODEL_DIR = CURRENT_DIR.parent/"temp/models"
 WEIGHTS_PATH = os.path.join(str(MODEL_DIR), 'weights.h5')
 
 OPTIMIZER = tf.optimizers.Adam(learning_rate=LEARNING_RATE)

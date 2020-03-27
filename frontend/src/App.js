@@ -53,7 +53,8 @@ class App extends Component {
     axios.post('http://127.0.0.1:5000/upload', formData)
     .then(function(response, data) {
             data = response.data;
-            self.setState({imagePrediction:data})
+            console.log(data["class"])
+            self.setState({imagePrediction:data["class"]})
             var t1 = performance.now();
             console.log("The time it took to predict the image " + (t1 - t0) + " milliseconds.")
         })
