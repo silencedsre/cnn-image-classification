@@ -57,4 +57,4 @@ For serving with environment with GPU set environment variable
 |  Flatten 	|  3136 	|   512	|   Dense 1	| 
 |   Dense 1	|  512 	| 256  	| Dense 2  	|
 |   Dense 2	| 256  	| 64  	| Dense 3  	|
-|  Dense 4 	| 64  	| 6  	|   Final Output	|
+|  Dense 3 	| 64  	| 6  	|   Final Output	|
