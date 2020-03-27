@@ -25,7 +25,7 @@ For serving with GPU set environment variable
 ### Model Training
 `cd backend/src` <br>
 `python model.py`
-#### Note: Everytime you run model.py starts, it starts training from latest checkpoint. Only the latest model weights will be saved.
+#### Note: Everytime you run model.py, it starts training from latest checkpoint. Only the latest model weights will be saved.
 
 ### Monitor with tensorboard (optional)
 > `$ tensorboard --logdir=temp`
